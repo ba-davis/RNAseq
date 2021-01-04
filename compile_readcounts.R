@@ -5,7 +5,7 @@
 
 library(parallel)
 library(optparse)
-
+library(readxl)
 
 # Command Line Arguments
 # -d : path to directory of STAR's .ReadsPerGene files
@@ -17,6 +17,8 @@ option_list = list(
               help="path to ReadsPerGene files", metavar="character"),
   make_option(c("-s", "--strand"), type="numeric", default=NULL,
               help="number signifying which column of counts to keep", metavar="numeric"),
+  make_option(c("-m", "--metadata"), type="character", default=NULL,
+              help="path to metadata excel file, first column is desired sample name", metavar="character"),	      
   make_option(c("-o", "--outfile"), type="character", default="counts_table.txt",
               help="desired outfile (counts_table.txt)", metavar="character")
 )
@@ -33,10 +35,10 @@ if (is.null(opt$strand)){
   print_help(opt_parser)
   stop("Missing strand column.n", call.=FALSE)
 }
-#if (is.null(opt$outfile)){
-#  print_help(opt_parser)
-#  stop("Missing output file name.n", call.=FALSE)
-#}
+if (is.null(opt$metadata)){
+  print_help(opt_parser)
+  stop("Missing metadata file.n", call.=FALSE)
+}
 
 # create a list that contains the path to all input files
 counts_list <- list.files(opt$directory, 'ReadsPerGene.out.tab$', full=T)
@@ -44,6 +46,14 @@ names(counts_list) <- counts_list
 names(counts_list) <- gsub('.star.ReadsPerGene.out.tab$','',names(counts_list))
 names(counts_list) <- gsub(opt$directory, '',names(counts_list))
 names(counts_list) <- gsub("/", '',names(counts_list))
+
+# replace the current names (the fastq prefix) with desired sample names from metadata excel file
+# read in the metadata excel file
+my_meta <- as.data.frame(read_excel(opt$metadata))
+colnames(my_meta)[1] <- "sample"
+# create vector of sample names from matching fastq with sample in metadata file
+my_samples <- as.character(sapply(names(counts_list), function(x) my_meta[my_meta$fastq == x, "sample"]))
+names(counts_list) <- my_samples
 
 # read in each counts file as a data frame and store in a list of df's
 counts_dfs <- mclapply(counts_list, function(x) read.table(x), mc.cores=8)
