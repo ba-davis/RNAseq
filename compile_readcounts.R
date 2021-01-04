@@ -76,5 +76,15 @@ for (i in 1:length(counts_dfs)) {counts_dfs[[i]] <- counts_dfs[[i]][-c(1,2,3,4),
 # merge all data frames on "GeneID"
 my_table <- Reduce(function(df1, df2) merge(df1, df2, by = "GeneID", all = TRUE), counts_dfs)
 
+# rearrange sample columns of raw counts table to be in same order as rows of metadata table
+# if the desired sample names in metadata table have dashes, they will have been replaced in colnames of raw counts table as periods
+# replace the dashes with periods in the first column of metadata table
+my_meta$sample <- gsub("-", ".", my_meta$sample)
+rownames(my_table) <- my_table[ ,1]
+my_table[ ,1] <- NULL
+my_table2 <- my_table[ ,match(my_meta$sample, colnames(my_table))]
+my_table2$GeneID <- rownames(my_table2)
+my_table2 <- my_table2[ ,c(ncol(my_table2),1:ncol(my_table2)-1)]
+
 # export the final table
-write.table(my_table, opt$outfile, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
+write.table(my_table2, opt$outfile, col.names=TRUE, row.names=FALSE, quote=FALSE, sep="\t")
