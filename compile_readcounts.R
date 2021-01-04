@@ -11,7 +11,10 @@ library(readxl)
 # -d : path to directory of STAR's .ReadsPerGene files
 # -o : desired outfile (counts_table.txt)
 # -s : strand info, which column of STAR ReadsPerGene files to keep (usually 2 or 4)
-
+# -m : path to metadata excel file
+#      first column must be desired sample name
+#       must contain "fastq" column with fastq file prefix to remove/match
+       
 option_list = list(
   make_option(c("-d", "--directory"), type="character", default=NULL,
               help="path to ReadsPerGene files", metavar="character"),
@@ -76,10 +79,12 @@ for (i in 1:length(counts_dfs)) {counts_dfs[[i]] <- counts_dfs[[i]][-c(1,2,3,4),
 # merge all data frames on "GeneID"
 my_table <- Reduce(function(df1, df2) merge(df1, df2, by = "GeneID", all = TRUE), counts_dfs)
 
+# The order of the sample columns in the counts table is currently in the order of the
+#  ReadPerGene files from the star directory
 # rearrange sample columns of raw counts table to be in same order as rows of metadata table
 # if the desired sample names in metadata table have dashes, they will have been replaced in colnames of raw counts table as periods
 # replace the dashes with periods in the first column of metadata table
-my_meta$sample <- gsub("-", ".", my_meta$sample)
+#my_meta$sample <- gsub("-", ".", my_meta$sample)
 rownames(my_table) <- my_table[ ,1]
 my_table[ ,1] <- NULL
 my_table2 <- my_table[ ,match(my_meta$sample, colnames(my_table))]
