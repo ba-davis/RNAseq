@@ -7,9 +7,9 @@
 
 # Usage:
 
-dir=$1                    # path to Trimmomatic log files
-raw_file_path=$2          # path to raw fastq files
-suffix="_R1.merged.fq.gz" # ending of fastq files to remove, leaving sample name
+dir=$1                         # path to Trimmomatic log files
+raw_file_path=$2               # path to raw fastq files
+suffix="_L002_R1_001.fastq.gz" # ending of fastq files to remove, leaving sample name
 
 for i in $dir/*.err; do
 
