@@ -149,7 +149,7 @@ keep <- filterByExpr(y)
 y <- y[keep,,keep.lib.sizes=FALSE]
 counts.keep <- as.data.frame(y$counts)
 print(paste0("Genes remaining after low-count filtering: ", nrow(counts.keep)))
-
+write.table(counts.keep, "filtered_counts.txt", sep="\t", col.names=T, row.names=F, quote=F)
 
 ##################################
 # Variance Stabilizing Transform #

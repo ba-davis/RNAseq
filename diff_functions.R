@@ -31,16 +31,19 @@ run_contrasts <- function(my.contrasts, export_path="../data/diff/", gene_info, 
     dev.off()
 
     # MA Plot
-    source('/home/groups/hoolock2/u0/bd/my_scripts/RNAseq/DE_ref_funcs.R')
-    my.stats <- edgeStats(res, fc=1, pc=0.05, pa=TRUE)
+    #source('/home/groups/hoolock2/u0/bd/my_scripts/RNAseq/DE_ref_funcs.R')
+    my.stats <- edgeStats(res, fc=fc, pc=pc, pa=pa)
     png(paste0(export_path, resname, ".my_ma_plot.png"))
-    edgeMAplot(res, my.stats, y.ax="log2FC", ptitle=paste0("MA Plot:\n", resname, "\n", "Sig Genes = L2FC > ", fc, " and padj < ", pc), ymin=-10, ymax=10)
+    edgeMAplot(res, my.stats, y.ax="log2FC", ptitle=paste0("MA Plot:\n", resname, "\n", "Sig Gene Cutoffs: L2FC: ", fc, " and padj < ", pc), ymin=-10, ymax=10)
     dev.off()
 
     # Make export table
     mytab <- res$table
     mytab$padj <- p.adjust(mytab$PValue, method="BH")
     mytab$GeneID <- rownames(mytab)
+
+    print(paste0("There are ", nrow(mytab[mytab$padj < pc, ]), " genes with padj < ", pc))
+    
     # merge DE results with normalized counts
     if (log==TRUE) {
       mydat <- merge(mytab, tmm.log, by="GeneID")
@@ -54,6 +57,11 @@ run_contrasts <- function(my.contrasts, export_path="../data/diff/", gene_info, 
 
     # export diff results
     write.table(myres, paste0(export_path, resname, ".results.txt"), sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
+
+    # get sig results
+    myres.sig <- myres[myres$padj < pc, ]
+    # export sig diff results
+    write.table(myres.sig, paste0(export_path, resname, ".sig_results.txt"), sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
   }
 }
 
