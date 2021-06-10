@@ -21,13 +21,13 @@ Need to make a raw counts table from the STAR output, explore data, differential
 
 ## Input Requirements
 **1. metadata excel file**
-     - first column **must** be desired sample name (column **Sample_Name**)
-     - **must** contain column **fastq** which is the fastq file prefix
-       - this is the first part of the fastq file name
-       - (the part preceding the general suffix ".star.ReadsPerGene.out.tab" of the STAR output
-     - currently, uses column **Group** to define sample group membership (colors of PCA, groups to compare, etc)
-     - rows (samples) are in a desired order that makes sense (with replicates together)
-     - the sample columns of raw counts table will be in this same order
+  - first column **must** be desired sample name (column **Sample_Name**)
+  - **must** contain column **fastq** which is the fastq file prefix
+    - this is the first part of the fastq file name
+    - (the part preceding the general suffix ".star.ReadsPerGene.out.tab" of the STAR output
+  - currently, uses column **Group** to define sample group membership (colors of PCA, groups to compare, etc)
+  - rows (samples) are in a desired order that makes sense (with replicates together)
+  - the sample columns of raw counts table will be in this same order
 
 **2. raw counts table**
      - made with **compile_readcounts** function and passing metadat excel file to get sample names
