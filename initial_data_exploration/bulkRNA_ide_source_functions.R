@@ -156,6 +156,11 @@ plot_total_counts <- function(raw_counts=raw_counts, outfile_prefix="total_count
 ############--------------------------------------------------------------------#
 # FUNCTION # plot_top_count_genes: to plot the top genes based on average count #
 ############--------------------------------------------------------------------#
+# PURPOSE: produce a barplot of the top genes by average count across all samples
+#          export a barplot file and a corresponding text file
+#          if gene info is provided, x axis labels will be gene names
+#            - if a GeneID has no gene name, the label will be the GeneID
+#            - if no gene info is provided, x axis labels will be GeneID
 # INPUTS: raw_counts: raw counts data.frame (only samples as columns, GeneID is rownames)
 #         n: number of top genes to plot, default 20
 #         gene_info: (optional) gene info data frame (output of clean_gene_info function, must have GeneID and gene.name cols)
@@ -183,7 +188,10 @@ plot_top_count_genes <- function(raw_counts=raw_counts, n=20, gene_info=NULL, ou
 
     # reorder rows by avg count
     max_counts_final <- max_counts_final[order(max_counts_final$avg, decreasing=T), ]
-    
+
+    # fill missing gene.name values with GeneID
+    max_counts_final$gene.name <- ifelse(max_counts_final$gene.name == "", max_counts_final$GeneID, as.character(max_counts_final$gene.name))
+  
     # specify the order of the gene.name factor levels for correct x-axis order on plot
     max_counts_final$gene.name <- factor(max_counts_final$gene.name, levels=unique(max_counts_final$gene.name))
 
