@@ -18,3 +18,9 @@ Produce a raw counts table
   - (-o) desired output file name
   - (-s) number of column to use for counts (often 4 or 2)
   - (-m) path to excel file containing 1 sheet of metadata. First column must be desired sample name, also must contain a column "fastq" containing the prefix of the fastq file
+
+
+TODO:
+in ide.R script, make sure export of filtered counts is in good format (include GeneID as first column?)
+
+export cpm and logcpm counts in ide.R script? Currently exported in differential analysis
