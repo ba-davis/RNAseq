@@ -3,9 +3,9 @@
 # Functions for data exploration of bulk RNAseq data
 # 1. clean_gene_info: read in a gene info file and produce clean colnames, remove dups
 # 2. compile_readcounts: create counts table from directory of STAR ReadsPerGene.tab files
-# 3. plot_total_counts:
-# 4. plot_top_count_genes:
-
+# 3. plot_total_counts: create barplot of total raw counts per sample
+# 4. plot_top_count_genes: create barplot of top n gene by average count across all samples
+# 5. lcf_edger: low count filter via edgeR method
 
 #----------------------------------------------------------------------------------------------------#
 
@@ -48,7 +48,7 @@ clean_gene_info <- function(gene_info, gene_id_col="GeneID", gene_name_col="gene
   # change gene.name colname to "gene.name"
   colnames(ref)[colnames(ref)==gene_name_col] <- new_name
 
-  if (description) {
+  if (!(is.null(description))) {
     # change gene description colname
     colnames(ref)[colnames(ref)==gene_desc] <- new_desc
   }
@@ -197,7 +197,7 @@ plot_top_count_genes <- function(raw_counts=raw_counts, n=20, gene_info=NULL, ou
 
     # create barplot of top Genes with Max Counts on Avg
     myplot <- ggplot(max_counts_final, aes(x=gene.name,y=avg)) +
-      labs(x="Gene Name", y="Avg Gene Count", title="Genes with Highest Average Raw Counts Across All Samples") +
+      labs(x="Gene", y="Avg Gene Count", title="Genes with Highest Average Raw Counts Across All Samples") +
       theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
       geom_bar(stat="identity") +
       theme_minimal() +
@@ -217,7 +217,7 @@ plot_top_count_genes <- function(raw_counts=raw_counts, n=20, gene_info=NULL, ou
 
     # create barplot of top Genes with Max Counts on Avg
     myplot <- ggplot(max_counts_final, aes(x=GeneID, y=avg)) +
-      labs(x="Gene Name", y="Avg Gene Count", title="Genes with Highest Average Raw Counts Across All Samples") +
+      labs(x="Gene", y="Avg Gene Count", title="Genes with Highest Average Raw Counts Across All Samples") +
       theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
       geom_bar(stat="identity") +
       theme_minimal() +
@@ -248,6 +248,31 @@ plot_top_count_genes <- function(raw_counts=raw_counts, n=20, gene_info=NULL, ou
   #ggsave(filename=paste(plotfile_prefix, plot_type, sep="."), plot=myplot)
 
   return(myplot)
+}
+
+#-----------------------------------------------------------------------------------------------------------------#
+
+############------------------------------------------#
+# FUNCTION # lcf_edger: to low count filter via edgeR #
+############------------------------------------------#
+# INPUTS: raw_counts: raw_counts data.frame (samples only as columns)
+#         group: vector denoting sample group membership
+# OUTPUTS: 1. filtered_counts data.frame
+lcf_edger <- function(raw_counts, group) {
+
+  # create the DGEList data class from edgeR using the raw counts and group vector
+  y <- DGEList(counts=raw_counts, group=group)
+
+  # Filter low count genes
+  keep <- filterByExpr(y)
+  y <- y[keep, , keep.lib.sizes=FALSE]
+
+  filtered_counts <- as.data.frame(y$counts)
+
+  print(paste0("Removed ", nrow(raw_counts) - nrow(filtered_counts), " genes with low counts across samples"))
+  print(paste0("Number of genes remaining: ", nrow(filtered_counts)))
+  
+  return(filtered_counts)
 }
 
 #-----------------------------------------------------------------------------------------------------------------#
