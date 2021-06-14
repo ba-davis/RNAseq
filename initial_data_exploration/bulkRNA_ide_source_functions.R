@@ -6,7 +6,7 @@
 # 3. plot_total_counts: create barplot of total raw counts per sample
 # 4. plot_top_count_genes: create barplot of top n gene by average count across all samples
 # 5. lcf_edger: low count filter via edgeR method
-
+# 6. var_stable_transform: perform variance stabilizing transformation of counts for visualization
 #----------------------------------------------------------------------------------------------------#
 
 #############
@@ -277,3 +277,59 @@ lcf_edger <- function(raw_counts, group) {
 
 #-----------------------------------------------------------------------------------------------------------------#
 
+############--------------------------------------------------------------------------------#
+# FUNCTION # var_stable_transform: obtain transformed count data suitable for visualization #
+############--------------------------------------------------------------------------------#
+# PURPOSE: transform RNAseq count data for visualizations (remove dependence of variance on the mean)
+#          Multiple methods exist. DESeq2 provides VST and rlog functions. edgeR uses logCPM.
+#          Invoking a DESeq2 method will create the dds object, normalize for seq depth via estimateSizeFactors, and transform.
+#          Invoking the edgeR method will create the DGEList object, normalize for seq depth via calcNormFactors, and transform.
+# INPUTS: counts: a counts data.frame (usually filtered_counts), samples as columns
+#         coldata: a coldata data.frame made from the metadata
+#         method: one of "vst", "rlog", "logcpm"
+#         formula_vars: desired variables for design creation (in order)
+#                       only required if method is "vst" or "rlog"
+#                       ex: formula_vars=c(0, "Group")
+#         blind: whether or not blind is TRUE or FALSE for vst or rlog transform
+#                only required if method is "vst" or "rlog"
+#                blind set to FALSE is generally safe
+#         group: group of interest for DGEList object creation
+#                must be colname from coldata (often it's "Group")
+#                only required if method is "logcpm"
+# OUTPUTS: depends on the transformation method chosen. Either:
+#          vst:
+#          rlog:
+#          logcpm: a data.frame of logcpm values
+var_stable_transform <- function(counts, coldata=coldata, method, formula_vars=NULL, blind=NULL, group=NULL) {
+  if (method %in% c("vst", "rlog")) {
+    # Create the design from the formula variables
+    design <- as.formula(paste("", paste(formula_vars, collapse= " + "), sep=" ~ "))
+    # Create a dds object via DESeq2
+    dds <- DESeqDataSetFromMatrix(countData=counts, colData=coldata, design=design)
+    dds <- estimateSizeFactors(dds)
+    # Transform to stabilize variance
+    if (method=="vst") {
+      print("Performing vst transformation via DESeq2")
+      print(paste0("Design formula specified as: ~ ", design[2]))
+      vsd <- vst(dds, blind=blind)
+      return(vsd)
+    }
+    else if (method=="rlog") {
+      print("Performing rlog transformation via DESeq2")
+      print(paste0("Design formula specified as: ~ ", design[2]))
+      rlog <- rlog(dds, blind=blind)
+      return(rlog)
+    }
+  }
+  else if (method=="logcpm") {
+    print("Performing logCPM transformation via edgeR")
+    print(paste0("Group of interest specified as: ", group))
+    # Create DGEList object via edgeR
+    y <- DGEList(counts=counts, group=coldata[[group]])
+    # Normalize (TMM normalization for RNA composition)
+    y <- calcNormFactors(y, method = "TMM")
+    # Log CPM Transform
+    cpm.log <- as.data.frame(cpm(y, log=TRUE))
+    return(cpm.log)
+  }
+}
