@@ -7,6 +7,9 @@
 # 4. plot_top_count_genes: create barplot of top n gene by average count across all samples
 # 5. lcf_edger: low count filter via edgeR method
 # 6. var_stable_transform: perform variance stabilizing transformation of counts for visualization
+# 7. sample_dist_heatmap: plot a Euclidean distance sample correlation heatmap
+# 8. deseq2_pca: plot a simple PCA biplot of PC1 vs PC2 via DESeq2's plotPCA function
+
 #----------------------------------------------------------------------------------------------------#
 
 #############
@@ -297,8 +300,8 @@ lcf_edger <- function(raw_counts, group) {
 #                must be colname from coldata (often it's "Group")
 #                only required if method is "logcpm"
 # OUTPUTS: depends on the transformation method chosen. Either:
-#          vst:
-#          rlog:
+#          vst: a DESeqTransform object (genes as rows by samples as columns)
+#          rlog: a DESeqTransform object (genes as rows by samples as columns)
 #          logcpm: a data.frame of logcpm values
 var_stable_transform <- function(counts, coldata=coldata, method, formula_vars=NULL, blind=NULL, group=NULL) {
   if (method %in% c("vst", "rlog")) {
@@ -333,3 +336,83 @@ var_stable_transform <- function(counts, coldata=coldata, method, formula_vars=N
     return(cpm.log)
   }
 }
+
+#-------------------------------------------------------------------------------------------------------------------------#
+
+############-----------------------------------------------------------------#
+# FUNCTION # sample_dist_heatmap: plot a sample distance correlation heatmap #
+############-----------------------------------------------------------------#
+# INPUTS: norm_counts: normalized counts, output of var_stable_transform function
+#                      note that it needs to be properly formatted (ex: t(assay(vsd)))
+#         outfile: prefix of output plot file, default: eucl_dist_heatmap
+#         plot_type: type of plotfile ("png" or "pdf")
+#         print_to_screen: whether or not to print to the screen (such as in rmarkdown doc)
+# OUTPUTS: a png or pdf heatmap plot file
+#          optionally, prints pheatmap plot to screen
+sample_dist_heatmap <- function(norm_counts, outfile="eucl_dist_heatmap", plot_type=plot_type, print_to_screen=NULL) {
+  # use "dist" function to calculate Euclidian distance between samples
+  sampleDists <- dist(norm_counts)
+
+  # visualize the distances in a heatmap
+  sampleDistMatrix <- as.matrix(sampleDists)
+  colnames(sampleDistMatrix) <- NULL
+  colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+
+  if (plot_type=="png") {
+    png(paste(outfile, plot_type, sep="."))
+    pheatmap(sampleDistMatrix,
+         main="Sample Distance Heatmap",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         col = colors)
+    dev.off()
+  } else if (plot_type=="pdf") {
+    pdf(paste(outfile, plot_type, sep="."))
+    pheatmap(sampleDistMatrix,
+         main="Sample Distance Heatmap",
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         col = colors)
+    dev.off()
+  }
+
+  if (!(is.null(print_to_screen))) {
+    pheatmap(sampleDistMatrix,
+             main="Sample Distance Heatmap",
+             clustering_distance_rows = sampleDists,
+             clustering_distance_cols = sampleDists,
+             col = colors)
+  }	   
+}
+
+#----------------------------------------------------------------------------------------------------------------------------#
+
+############---------------------------------------------#
+# FUNCTION # deseq2_pca: use DESeq2 to plot a PCA biplot # 
+############---------------------------------------------#
+# INPUTS: norm_counts: normalized counts, must be either vst or rlog output of var_stable_transform function
+#         intgroup: variable (colname of coldata) to be used for color of PCA points            
+#                   default, "Group"
+#         plot_type: type of plotfile ("png" or "pdf")
+#         outfile: prefix of output plot file, default: deseq2_pca
+# OUTPUTS: 
+deseq2_pca <- function(norm_counts, intgroup="Group", outfile="deseq2_pca", plot_type=plot_type) {
+  # use all genes passing low count filter for PCA
+  dataVST <- plotPCA(norm_counts, intgroup=intgroup, returnData=TRUE)
+  percentVar <- round(100 * attr(dataVST, "percentVar"))
+  
+  # Make PCA Plot
+  myplot <- ggplot(dataVST, aes_string("PC1", "PC2", color=intgroup)) +
+              geom_point(size=3) +
+              xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+              ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+              ggtitle("Principal Component Analysis") +
+              geom_text(aes(label=paste(name, sep="")),hjust=1, vjust=-.5) +
+              theme_minimal()
+  ggsave(filename=paste(outfile, plot_type, sep="."), plot=myplot)
+
+  return(myplot)
+}
+
+#---------------------------------------------------------------------------------------------------------------------------#
+
