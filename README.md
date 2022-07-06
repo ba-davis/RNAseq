@@ -6,16 +6,32 @@ Need to make a raw counts table from the STAR output, explore data, differential
 
 ## Strategy of Bulk RNAseq Analysis
 1. Utilize **FQC_Trim_align** scripts to perform via SLURM:
+   Performs:
      - FastQC on raw files
      - Trimmomatic
      - FastQC on trimmed files
      - alignment and gene counts via STAR and ensembl
+   Process:
+     1. Make metadata excel file with columns Sample_Name (1st column). Group, and fastq
+       - technically don't need this until after alignment, but good to plan it now
+     2. Locate the 3 scripts from FQC_Trim_Align to make args_file and execute SLURM (copy to work_dir/scripts)
+     2. Edit make_rnaseq_args_file.sh script (PE or SE) to find proper fastq.gz file names
+     3. Prepare 3 input variables:
+       1. path to raw fastq files
+       2. path to folder containing STAR indices for reference genome
+       3. path to gtf file for reference genome annotation
+     4. execute submit_script_rnaseq.sh with the above 3 input variables in order on exacloud
 
-2. Utilize functions in **bulkRNA_ide_source_functions.R** to:
+2. Collect Stats
+     - trimming stats, STAR stats, fastqc stats
+     - scripts in RNAseq repository, collect_stats folder
+     - TODO: make script to collect fastqc stats
+     
+3. Utilize functions in **bulkRNA_ide_source_functions.R** to:
      - create raw counts table from STAR output
      - perform initial data exploration on the count data
 
-3. Utilize functions to perform differential expression analysis
+4. Utilize functions to perform differential expression analysis
      - with DESeq2 or edgeR
 
 
