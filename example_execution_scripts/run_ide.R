@@ -20,18 +20,17 @@ library(readxl)
 
 # LOAD CUSTOM FUNCTIONS
 
-#source("/home/groups/hoolock2/u0/bd/Projects/agarwal/bulk_RNAseq_pipeline/rmarkdown/bulkRNA_source_functions.R")
 source("/home/groups/hoolock2/u0/bd/scripts_2020/RNAseq/initial_data_exploration/bulkRNA_ide_source_functions.R")
 
 #------------------------------------------------------#
 
 # USER VARIABLES
 
-raw_counts_tbl <- "../data/counts_tables/raw_counts.txt"
-my_metadata <- "../metadata/ECP67.metadata.xlsx"
+raw_counts_tbl <- "/home/groups/hoolock2/u0/bd/Projects/mariam_r21_mouse_ad_2022/rnaseq/data/counts/raw_counts.txt"
+my_metadata <- "/home/groups/hoolock2/u0/bd/Projects/mariam_r21_mouse_ad_2022/rnaseq/metadata/r21_metadata.xlsx"
 gene_info <- ""
 plot_type <- "pdf"
-outfile_prefix <- "../data/ide/" # run from scripts dir, set relative path for outfiles
+outfile_prefix <- "/home/groups/hoolock2/u0/bd/Projects/mariam_r21_mouse_ad_2022/rnaseq/data/ide/" # run from scripts dir, set relative path for outfiles
 
 #------------------------------------------------------#
 
@@ -45,6 +44,9 @@ raw_counts[,1] <- NULL
 
 # read in metadata excel file
 coldata <- as.data.frame(read_xlsx(my_metadata))
+
+# check if colnames of raw counts table matches coldata$Sample_Name
+identical(colnames(raw_counts), coldata$Sample_Name)
 
 # read in reference table that matches geneID to gene name
 ref <- read.delim(gene_info, header=TRUE)
